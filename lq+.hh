@@ -6,8 +6,8 @@ namespace lq {
     class enumerable;
     
     template<typename T, typename NF, typename CF>
-    enumerable<T, NF, CF> _make_enumerable(NF nf, CF cf) {
-        return enumerable<T, NF, CF>(nf, cf);
+    enumerable<T, NF, CF>* _make_enumerable(NF nf, CF cf) {
+        return new enumerable<T, NF, CF>(nf, cf);
     }
     
     template<typename T>
@@ -17,7 +17,6 @@ namespace lq {
         virtual T current() = 0;
         
         enumerable_base() {
-            throw 1;
         }
         
         class iterator {
@@ -86,17 +85,22 @@ namespace lq {
     };
     
     template<typename T, typename U>
-    enumerable_base<T> _from_iterable(U xs) {
+    enumerable_base<T>* _from_iterable(U xs) {
         typename U::iterator iter = xs.begin();
-        return _make_enumerable<T>([xs, &iter]() {
+        return (_make_enumerable<T>([xs, &iter]() {
             return ++iter != xs.end();
         }, [xs, iter]() {
             return *iter;
-        });
+        }));
     }
     
     template<typename T>
-    enumerable_base<T> from(std::initializer_list<T> xs) {
+    enumerable_base<T>* _from(std::initializer_list<T> xs) {
         return _from_iterable<T>(xs);
     }
-};
+
+    template<typename T>
+    auto from(std::initializer_list<T> xs) -> decltype(*_from(xs)) {
+        return *_from(xs);
+    }
+ };
