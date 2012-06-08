@@ -1,30 +1,29 @@
 #include <vector>
-#include <iostream>
+#include <functional>
 
 namespace lq {
-    template<typename T, typename NF, typename CF>
-    class enumerable;
-    
-    template<typename T, typename NF, typename CF>
-    enumerable<T, NF, CF>* _make_enumerable(NF nf, CF cf) {
-        return new enumerable<T, NF, CF>(nf, cf);
-    }
-    
     template<typename T>
-    class enumerable_base {
+    class enumerable {
+        std::function<bool()> next_func;
+        std::function<T()> current_func;
     public:
-        virtual bool next() = 0;
-        virtual T current() = 0;
-        
-        enumerable_base() {
+        bool next() {
+            return next_func();
         }
+        T current() {
+            return current_func();
+        }
+        
+        enumerable(std::function<bool()> next_func, std::function<T()> current_func)
+            : next_func(next_func), current_func(current_func)
+        { }
         
         class iterator {
             bool end_iterator;
             bool ended;
-            enumerable_base<T>& e;
+            enumerable<T>& e;
         public:
-            iterator(enumerable_base<T>& e, bool end_iterator = false) : e(e), ended(false), end_iterator(end_iterator) { }
+            iterator(enumerable<T>& e, bool end_iterator = false) : e(e), ended(false), end_iterator(end_iterator) { }
             iterator& operator++() {
                 if(!ended) {
                     ended = e.next();
@@ -52,27 +51,10 @@ namespace lq {
         iterator end() {
             return iterator(*this, true);
         }
-    };
-    
-    template<typename T, typename NF, typename CF>
-    class enumerable : public enumerable_base<T> {
-        NF nf;
-        CF cf;
-    public:
-        enumerable(NF nf, CF cf) : nf(nf), cf(cf) {
-            std::cout << "ctor for enumerable" << std::endl;
-        }
-        
-        virtual bool next() {
-            return nf();
-        }
-        virtual T current() {
-            return cf();
-        }
         
         template<typename U>
-        enumerable<T, NF, CF> where(U pred) {
-            return _make_enumerable<T>([this, pred]() -> bool {
+        enumerable<T> where(U pred) {
+            return enumerable<T>([this, pred]() -> bool {
                 if(!next()) return false;
                 while(!pred(current())) {
                     if(!next()) return false;
@@ -85,22 +67,17 @@ namespace lq {
     };
     
     template<typename T, typename U>
-    enumerable_base<T>* _from_iterable(U xs) {
+    enumerable<T> _from_iterable(U xs) {
         typename U::iterator iter = xs.begin();
-        return (_make_enumerable<T>([xs, &iter]() {
+        return enumerable<T>([xs, &iter]() {
             return ++iter != xs.end();
-        }, [xs, iter]() {
+        }, [xs, &iter]() {
             return *iter;
-        }));
+        });
     }
     
     template<typename T>
-    enumerable_base<T>* _from(std::initializer_list<T> xs) {
+    enumerable<T> from(std::initializer_list<T> xs) {
         return _from_iterable<T>(xs);
     }
-
-    template<typename T>
-    auto from(std::initializer_list<T> xs) -> decltype(*_from(xs)) {
-        return *_from(xs);
-    }
- };
+};
