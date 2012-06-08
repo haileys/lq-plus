@@ -1,5 +1,8 @@
 #include <vector>
 #include <functional>
+#include <cstdlib>
+#include <memory>
+#include <tuple>
 
 namespace lq {
     template<typename T>
@@ -66,13 +69,20 @@ namespace lq {
         }
     };
     
+    template<typename U>
+    struct _lambda_params {
+        U xs;
+        typename U::iterator iter;
+        _lambda_params(U xs, typename U::iterator iter) : xs(xs), iter(iter) { }
+    };
+    
     template<typename T, typename U>
     enumerable<T> _from_iterable(U xs) {
-        typename U::iterator iter = xs.begin();
-        return enumerable<T>([xs, &iter]() {
-            return ++iter != xs.end();
-        }, [xs, &iter]() {
-            return *iter;
+        auto t = new _lambda_params<U>(xs, xs.begin());
+        return enumerable<T>([t]() -> bool {
+            return ++(t->iter) != t->xs.end();
+        }, [t]() -> T {
+            return *t->iter;
         });
     }
     
