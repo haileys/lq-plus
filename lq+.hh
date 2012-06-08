@@ -1,6 +1,7 @@
 #include <vector>
 #include <functional>
 #include <iostream>
+#include <memory>
 
 namespace lq {
     template<typename T>
@@ -76,7 +77,7 @@ namespace lq {
     
     template<typename T, typename U>
     enumerable<T> _from_iterable(U xs) {
-        auto t = new _lambda_params<U>(xs, xs.begin());
+        auto t = std::shared_ptr<_lambda_params<U> >(new _lambda_params<U>(xs, xs.begin()));
         return enumerable<T>([t]() -> bool {
             return ++(t->iter) != t->xs.end();
         }, [t]() -> T {
