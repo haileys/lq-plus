@@ -1,8 +1,6 @@
 #include <vector>
 #include <functional>
-#include <cstdlib>
-#include <memory>
-#include <tuple>
+#include <iostream>
 
 namespace lq {
     template<typename T>
@@ -29,7 +27,7 @@ namespace lq {
             iterator(enumerable<T>& e, bool end_iterator = false) : e(e), ended(false), end_iterator(end_iterator) { }
             iterator& operator++() {
                 if(!ended) {
-                    ended = e.next();
+                    ended = !e.next();
                 }
                 return *this;
             }
@@ -37,7 +35,7 @@ namespace lq {
                 return e.current();
             }
             bool operator==(iterator& iter) {
-                if(end_iterator) {
+                if(iter.end_iterator) {
                     return ended;
                 } else {
                     return false;
